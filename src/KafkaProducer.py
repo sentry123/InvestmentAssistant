@@ -9,9 +9,10 @@ import re
 
 
 # Kafka producer configuration
-kafka_bootstrap_servers = 'kafka_bootstrap_servers'
-kafka_topic = 'kafka_topic'
-producer = KafkaProducer(bootstrap_servers=kafka_bootstrap_servers)
+kafka_topic = 'test'
+conf = {'bootstrap.servers': 'localhost:9092'}
+producer = Producer(conf)
+
 
 # Directory to monitor
 directory_to_monitor = "{}/data".format(os.getcwd())
@@ -59,14 +60,14 @@ def send_file_to_kafka(file_path):
     with open(file_path, 'rb') as data_file:
         crypto_binance_data = json.loads(data_file.read())
         for sym in crypto_binance_data:
-            producer.produce('test', key='key', value=str(sym), callback=delivery_report)
+            producer.produce(kafka_topic, key='key', value=str(sym), callback=delivery_report)
 
 
 def format_data_to_send(data):
     """
     should only send the following data fields : Timestamp, Open, High, Low, Close, Volume_(SUBJECT), Volume_(Currency), Weighted_Price
     """
-
+    pass
 
 
 if __name__ == "__main__":
