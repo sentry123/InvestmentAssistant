@@ -1,7 +1,7 @@
 import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from kafka import KafkaProducer
+from confluent_kafka import Producer
 from datetime import datetime, timezone
 import os
 import json
@@ -48,14 +48,18 @@ def extract_timestamp_from_file(file_path):
     return match
 
 
+def delivery_report(err, msg):
+    if err is not None:
+        print('Message delivery failed: {}'.format(err))
+    else:
+        print('Message delivered to {} [{}]'.format(msg.topic(), msg.partition()))
+
+
 def send_file_to_kafka(file_path):
     with open(file_path, 'rb') as data_file:
         crypto_binance_data = json.loads(data_file.read())
         for sym in crypto_binance_data:
-            producer.send(kafka_topic, value=sym)
-        # file_content = file.read()
-        # producer.send(kafka_topic, value=file_content)
-        # print(f"File '{file_path}' published to Kafka")
+            producer.produce('test', key='key', value=str(sym), callback=delivery_report)
 
 
 def format_data_to_send(data):
