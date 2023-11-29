@@ -39,14 +39,13 @@ class FileEventHandler(FileSystemEventHandler):
 def extract_timestamp_from_file(file_path):
     pattern = r'(\d{13})'
     match = re.findall(pattern, file_path)[0]
-    # timestamp_in_seconds = int(match)/1000.0
-    # dt = datetime.utcfromtimestamp(timestamp_in_seconds)
-    # dt = dt.replace(tzinfo=timezone.utc)
+    timestamp_in_seconds = int(match)/1000.0
+    dt = datetime.utcfromtimestamp(timestamp_in_seconds)
+    dt = dt.replace(tzinfo=timezone.utc)
 
-    # # Format the datetime as a string
-    # formatted_date = dt.strftime('%Y-%m-%d %H:%M:%S%z')
-    # return formatted_date
-    return match
+    # Format the datetime as a string
+    formatted_date = dt.strftime('%Y-%m-%d %H:%M:%S%z')
+    return formatted_date
 
 
 def delivery_report(err, msg):
