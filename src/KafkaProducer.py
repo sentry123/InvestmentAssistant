@@ -60,14 +60,16 @@ def send_file_to_kafka(file_path):
     with open(file_path, 'rb') as data_file:
         crypto_binance_data = json.loads(data_file.read())
         for sym in crypto_binance_data:
-            producer.produce(kafka_topic, key='key', value=str(sym), callback=delivery_report)
+            formatted_data = format_data_to_send(sym, file_path)
+            producer.produce(kafka_topic, key='key', value=formatted_data, callback=delivery_report)
 
 
-def format_data_to_send(data):
+def format_data_to_send(data, filename):
     """
     should only send the following data fields : Timestamp, Open, High, Low, Close, Volume_(SUBJECT), Volume_(Currency), Weighted_Price
     """
-    pass
+    data['timestamp'] = extract_timestamp_from_file(filename)
+    return str(data)
 
 
 if __name__ == "__main__":
