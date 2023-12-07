@@ -16,16 +16,10 @@ def parse_json_string(json_string):
     import json
     try:
         data = json.loads(json_string)
-        formatted_data = {}
-        formatted_data['timestamp'] = format_timestamp(data['openTime'])
-        formatted_data['symbol'] = data['symbol']  
-        formatted_data['open'] = data['openPrice']
-        formatted_data['high'] = data['highPrice']
-        formatted_data['low'] = data['lowPrice']
-        formatted_data['close'] = data['prevClosePrice']
-        formatted_data['volume_crypto'] = data['volume']
-        formatted_data['volume_currency'] = data['quoteVolume']
-        formatted_data['weighted_price'] = data['weightedAvgPrice']
+        formatted_data = {'timestamp': format_timestamp(data['openTime']), 'symbol': data['symbol'],
+                          'open': data['openPrice'], 'high': data['highPrice'], 'low': data['lowPrice'],
+                          'close': data['prevClosePrice'], 'volume_crypto': data['volume'],
+                          'volume_currency': data['quoteVolume'], 'weighted_price': data['weightedAvgPrice']}
 
         return formatted_data
 
