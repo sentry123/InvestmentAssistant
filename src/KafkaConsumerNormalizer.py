@@ -1,7 +1,39 @@
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import explode, split
+from datetime import datetime, timezone, timedelta
 
 
+## UDFs - For data formatting
+
+def format_timestamp(timestamp_ms):
+    timestamp_seconds = timestamp_ms / 1000.0
+    dt_utc = datetime.utcfromtimestamp(timestamp_seconds).replace(tzinfo=timezone.utc)
+    postgres_timestamp = dt_utc.strftime('%Y-%m-%d %H:%M:%S %z')
+    return postgres_timestamp
+
+
+def parse_json_string(json_string):
+    import json
+    try:
+        data = json.loads(json_string)
+        formatted_data = {}
+        formatted_data['timestamp'] = format_timestamp(data['openTime'])
+        formatted_data['symbol'] = data['symbol']  
+        formatted_data['open'] = data['openPrice']
+        formatted_data['high'] = data['highPrice']
+        formatted_data['low'] = data['lowPrice']
+        formatted_data['close'] = data['prevClosePrice']
+        formatted_data['volume_crypto'] = data['volume']
+        formatted_data['volume_currency'] = data['quoteVolume']
+        formatted_data['weighted_price'] = data['weightedAvgPrice']
+
+        return formatted_data
+
+    except ValueError:
+        return None
+
+
+# Create Spark Session
 spark = SparkSession.builder \
     .appName("KafkaSparkStreaming")     \
     .config("spark.jars", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1") \
