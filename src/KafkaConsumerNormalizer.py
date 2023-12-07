@@ -33,6 +33,25 @@ def parse_json_string(json_string):
         return None
 
 
+# Create a schema for the structured streaming DataFrame
+schema = StructType([
+    StructField("timestamp", StringType()),
+    StructField("symbol", StringType()),
+    StructField("open", DoubleType()),
+    StructField("high", DoubleType()),
+    StructField("low", DoubleType()),
+    StructField("close", DoubleType()),
+    StructField("volume_crypto", DoubleType()),
+    StructField("volume_currency", DoubleType()),
+    StructField("weighted_price", DoubleType())
+])
+
+
+# Define UDFs
+format_timestamp_udf = udf(format_timestamp, StringType())
+parse_json_string_udf = udf(parse_json_string, schema)
+
+
 # Create Spark Session
 spark = SparkSession.builder \
     .appName("KafkaSparkStreaming")     \
@@ -52,6 +71,10 @@ df = spark.readStream \
     .option("subscribe", kafka_topic) \
     .load()
 
+
+# Apply UDFs
+result_df = df.withColumn("parsed_data", parse_json_string_udf(df["value"]))
+result_df = result_df.withColumn("timestamp", format_timestamp_udf(result_df["parsed_data"]["timestamp"]))
 
 # Convert the binary value from Kafka into a string
 value_df = df.selectExpr("CAST(value AS STRING)")
