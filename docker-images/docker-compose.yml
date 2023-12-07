@@ -8,14 +8,18 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: mydatabase
     volumes:
-      - init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
+    networks:
+      - my_network
 
   zookeeper:
     image: wurstmeister/zookeeper:latest
     ports:
       - "2181:2181"
+    networks:
+      - my_network
 
   kafka:
     image: wurstmeister/kafka:latest
@@ -31,8 +35,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_CREATE_TOPICS: "test:1:1"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - my_network
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
@@ -40,6 +44,8 @@ services:
       - discovery.type=single-node
     ports:
       - "9200:9200"
+    networks:
+      - my_network
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.10.0
@@ -47,3 +53,8 @@ services:
       - "5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - my_network
+
+networks:
+  my_network:
