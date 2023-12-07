@@ -3,8 +3,16 @@ from pyspark.sql.functions import explode, split
 from datetime import datetime, timezone, timedelta
 
 
-## UDFs - For data formatting
+##JDBC driver for db connectivity
+jdbc_url = "jdbc:postgresql://your-timescaledb-host:your-port/your-database"
+connection_properties = {
+    "user": "your-username",
+    "password": "your-password",
+    "driver": "org.postgresql.Driver"
+}
 
+
+## UDFs - For data formatting
 def format_timestamp(timestamp_ms):
     timestamp_seconds = timestamp_ms / 1000.0
     dt_utc = datetime.utcfromtimestamp(timestamp_seconds).replace(tzinfo=timezone.utc)
@@ -70,26 +78,10 @@ df = spark.readStream \
 result_df = df.withColumn("parsed_data", parse_json_string_udf(df["value"]))
 result_df = result_df.withColumn("timestamp", format_timestamp_udf(result_df["parsed_data"]["timestamp"]))
 
-# Convert the binary value from Kafka into a string
-value_df = df.selectExpr("CAST(value AS STRING)")
 
-
-# Split the string into words
-words = value_df.select(
-    explode(split(value_df.value, " ")).alias("word")
-)
-
-
-# Count the occurrences of each word
-word_counts = words.groupBy("word").count()
-
-
-# Display the word counts to the console
-query = word_counts \
-    .writeStream \
-    .outputMode("complete") \
-    .format("console") \
-    .start()
+#Save dataframe to db
+result_df.write \
+    .jdbc(url=jdbc_url, table="your-table-name", mode="append", properties=connection_properties)
 
 
 # Await termination of the query
