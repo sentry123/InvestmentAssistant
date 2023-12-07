@@ -2,13 +2,20 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.types import StructType, StructField, StringType
 
+
+def write_to_timescaledb(batch_df, batch_id):
+    batch_df.write \
+        .mode("append") \
+        .jdbc(url=jdbc_url, table="crypto_price_data", properties=connection_properties)
+
+
 # JDBC driver for db connectivity
-# jdbc_url = "jdbc:postgresql://your-timescaledb-host:your-port/your-database"
-# connection_properties = {
-#     "user": "your-username",
-#     "password": "your-password",
-#     "driver": "org.postgresql.Driver"
-# }
+jdbc_url = "jdbc:postgresql://localhost:5432/mydatabase"
+connection_properties = {
+    "user": "myuser",
+    "password": "mypassword",
+    "driver": "org.postgresql.Driver"
+}
 
 # Create a Spark Session
 spark = SparkSession.builder \
@@ -70,14 +77,24 @@ result_df = df.select(
     "parsed_data.openTime"
 )
 
+# Filter based on symbol
 filtered_df = result_df.filter(result_df["symbol"].endswith("USDT"))
 
-# Define a query to print the records to the console
-query = filtered_df.writeStream \
-    .outputMode("append") \
-    .format("console") \
-    .start()
+# Format columns and cast data types
+formatted_result_df = filtered_df.select(
+    col("openTime").cast("timestamp").alias("timestamp"),
+    col("symbol"),
+    col("openPrice").cast("double").alias("open"),
+    col("highPrice").cast("double").alias("high"),
+    col("lowPrice").cast("double").alias("low"),
+    col("prevClosePrice").cast("double").alias("close"),
+    col("volume").cast("double").alias("volume_crypto"),
+    col("quoteVolume").cast("double").alias("volume_currency"),
+    col("weightedAvgPrice").cast("double").alias("weighted_price")
+)
+
+# Define a query to write to TimescaleDB and print the records to the console
+query = formatted_result_df.writeStream.outputMode("append").foreachBatch(write_to_timescaledb).start()
 
 # Await termination of the query
 query.awaitTermination()
-# spark.stop()
