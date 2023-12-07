@@ -35,6 +35,10 @@ def parse_json_string(json_string):
         return None
 
 
+def filter_symbol_udf(symbol):
+    return symbol.endswith("USDT")
+
+
 # Create a schema for the structured streaming DataFrame
 schema = StructType([
     StructField("timestamp", StringType()),
@@ -52,6 +56,7 @@ schema = StructType([
 # Define UDFs
 format_timestamp_udf = udf(format_timestamp, StringType())
 parse_json_string_udf = udf(parse_json_string, schema)
+filter_symbol_udf = udf(filter_symbol_udf, BooleanType())
 
 
 # Create Spark Session
@@ -77,10 +82,11 @@ df = spark.readStream \
 # Apply UDFs
 result_df = df.withColumn("parsed_data", parse_json_string_udf(df["value"]))
 result_df = result_df.withColumn("timestamp", format_timestamp_udf(result_df["parsed_data"]["timestamp"]))
+filtered_df = result_df.filter(filter_symbol_udf(result_df["parsed_data"]["symbol"]))
 
 
 #Save dataframe to db
-result_df.write \
+filtered_df.write \
     .jdbc(url=jdbc_url, table="your-table-name", mode="append", properties=connection_properties)
 
 
