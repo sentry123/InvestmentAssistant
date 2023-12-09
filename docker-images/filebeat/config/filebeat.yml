@@ -1,0 +1,36 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    exclude_files: ['\.gz$']
+    ignore_older: 10m
+    paths:
+      - "/Users/padasing/Projects/InvestmentAssistant1/src/logs/pyspark.log"
+#      - "../../../src/logs"
+
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+# setup filebeat to send output to logstash
+output.logstash:
+  hosts: ["logstash:5044"]
+  username: 'elastic'
+  password: 'changeme'
+
+output.elasticsearch:
+  hosts: 'elasticsearch:9200'
+  username: 'elastic'
+  password: 'changeme'
+
+# Write Filebeat own logs only to file to avoid catching them with itself in docker log files
+logging.level: debug
+logging.to_files: true
+logging.to_syslog: false
+loggins.metrice.enabled: false
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+ssl.verification_mode: none

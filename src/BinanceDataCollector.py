@@ -16,7 +16,7 @@ if api_response.status_code == 200:
     data = api_response.json()
 
     # Specify the file path where you want to save the JSON data
-    file_path = "{path}/data/{time}_binance_data.json".format(path=path, time=sys_time)
+    file_path = "{path}/data/{time}_binance_data.json".format(path=path, time=sys_time['serverTime'])
 
     # Write the JSON data to the file
     with open(file_path, 'w') as json_file:

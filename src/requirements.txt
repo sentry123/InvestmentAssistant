@@ -1,0 +1,8 @@
+watchdog
+confluent_kafka
+watchdog
+elasticsearch
+pyspark
+requests
+aiohttp
+
