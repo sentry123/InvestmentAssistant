@@ -25,3 +25,5 @@ Start the KafkaConsumer Spark job <br>
 Run the BinanceDataCollector script to load data into the datalake <br>
 `python3 BinanceDataCollector.py` <br>
 
+### Step 5:
+Run the ipynb notebook Bitcoin_price_prediction_model.ipynb to view the outputs.
