@@ -7,7 +7,7 @@ Use the below link to make windowed queries to get the data <br>
 <li>https://binance-docs.github.io/apidocs/spot/en/#rolling-window-price-change-statistics</li>
 
 
-##Follow the below steps to run the application
+## Follow the below steps to run the application
 ### Step 1: 
 Start the docker containers:  <br>
 `cd docker-images` <br>
