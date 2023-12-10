@@ -1,7 +1,11 @@
+import os
+import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json
 from pyspark.sql.types import StructType, StructField, StringType
 
+
+logging.basicConfig(filename='./logs/pyspark.log', level=logging.INFO)
 
 def write_to_timescaledb(batch_df, batch_id):
     batch_df.write \
@@ -17,10 +21,20 @@ connection_properties = {
     "driver": "org.postgresql.Driver"
 }
 
+
+log4j_properties_path = os.path.abspath('log4j.properties')
+
 # Create a Spark Session
 spark = SparkSession.builder \
     .appName("KafkaSparkStreaming") \
+    .config("spark.driver.extraJavaOptions", f"-Dlog4j.configuration=file:{log4j_properties_path}") \
     .getOrCreate()
+
+log4jLogger = spark.sparkContext._jvm.org.apache.log4j
+logger = log4jLogger.LogManager.getLogger(__name__)
+logger.info("Spark Logger Initialized")
+
+
 
 # Define the Kafka parameters
 kafka_bootstrap_servers = "localhost:9092"

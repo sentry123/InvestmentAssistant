@@ -1,4 +1,5 @@
-version: '2'
+version: '3.7'
+
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg13
@@ -12,14 +13,14 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - my_network
+      my_network:
 
   zookeeper:
     image: wurstmeister/zookeeper:latest
     ports:
       - "2181:2181"
     networks:
-      - my_network
+      my_network:
 
   kafka:
     image: wurstmeister/kafka:latest
@@ -36,25 +37,91 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_CREATE_TOPICS: "test:1:1"
     networks:
-      - my_network
+      my_network:
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
-    environment:
-      - discovery.type=single-node
+    container_name: elasticsearch
+    build:
+      context: elasticsearch/
+      args:
+        ELASTIC_VERSION: 7.13.0
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - elasticsearch:/usr/share/elasticsearch/data:Z
     ports:
       - "9200:9200"
+      - "9300:9300"
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      ELASTIC_PASSWORD: changeme
+      ELASTIC_USERNAME: elastic
+      discovery.type: single-node
+    restart: unless-stopped
     networks:
-      - my_network
+      my_network:
+
+  logstash:
+    container_name: logstash
+    build:
+      context: logstash/
+      args:
+        ELASTIC_VERSION: 7.13.0
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+    ports:
+      - "5044:5044/tcp"
+      - "50000:50000/tcp"
+      - "50000:50000/udp"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      LOGSTASH_INTERNAL_PASSWORD: changeme
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+    networks:
+      my_network:
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.10.0
+    container_name: kibana
+    build:
+      context: kibana/
+      args:
+        ELASTIC_VERSION: 7.13.0
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
     ports:
       - "5601:5601"
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      KIBANA_SYSTEM_PASSWORD: changeme
+    depends_on:
+        - elasticsearch
+    restart: unless-stopped
+    networks:
+      my_network:
+
+  filebeat:
+#    image: docker-logs-elk/filebeat:1.0.0
+    build:
+      context: filebeat/
+      args:
+        ELASTIC_VERSION: 7.13.0
+    volumes:
+      # needed to access all docker logs (read only) :
+      - "/var/lib/docker/containers:/usr/share/dockerlogs/data:ro"
+      # needed to access additional informations about containers
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    depends_on:
+      - elasticsearch
+      - logstash
     networks:
       - my_network
 
 networks:
   my_network:
+    driver: bridge
+
+volumes:
+  elasticsearch:
